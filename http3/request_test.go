@@ -22,7 +22,7 @@ var _ = Describe("Request", func() {
 		Expect(req.Method).To(Equal("GET"))
 		Expect(req.URL.Path).To(Equal("/foo"))
 		Expect(req.URL.Host).To(BeEmpty())
-		Expect(req.Proto).To(Equal("HTTP/3"))
+		Expect(req.Proto).To(Equal("HTTP/3.0"))
 		Expect(req.ProtoMajor).To(Equal(3))
 		Expect(req.ProtoMinor).To(BeZero())
 		Expect(req.ContentLength).To(Equal(int64(42)))
@@ -64,7 +64,7 @@ var _ = Describe("Request", func() {
 		}))
 	})
 
-	It("handles other headers", func() {
+	It("handles Other headers", func() {
 		headers := []qpack.HeaderField{
 			{Name: ":path", Value: "/foo"},
 			{Name: ":authority", Value: "quic.clemente.io"},
@@ -146,13 +146,14 @@ var _ = Describe("Request", func() {
 				{Name: ":scheme", Value: "ftp"},
 				{Name: ":method", Value: http.MethodConnect},
 				{Name: ":authority", Value: "quic.clemente.io"},
-				{Name: ":path", Value: "/foo"},
+				{Name: ":path", Value: "/foo?val=1337"},
 			}
 			req, err := requestFromHeaders(headers)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(req.Method).To(Equal(http.MethodConnect))
 			Expect(req.Proto).To(Equal("webtransport"))
-			Expect(req.URL.String()).To(Equal("ftp://quic.clemente.io/foo"))
+			Expect(req.URL.String()).To(Equal("ftp://quic.clemente.io/foo?val=1337"))
+			Expect(req.URL.Query().Get("val")).To(Equal("1337"))
 		})
 
 		It("errors with missing scheme", func() {

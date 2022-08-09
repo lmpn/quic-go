@@ -230,6 +230,8 @@ func newClient(
 ) (*client, error) {
 	if tlsConf == nil {
 		tlsConf = &tls.Config{}
+	} else {
+		tlsConf = tlsConf.Clone()
 	}
 	if tlsConf.ServerName == "" {
 		sni := host
