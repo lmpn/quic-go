@@ -3,6 +3,7 @@ package handshake
 import (
 	"crypto"
 	"crypto/aes"
+	"crypto/boring"
 	"crypto/cipher"
 	"crypto/tls"
 	"fmt"
@@ -44,7 +45,15 @@ func aeadAESGCMTLS13(key, nonceMask []byte) *xorNonceAEAD {
 	if err != nil {
 		panic(err)
 	}
-	aead, err := cipher.NewGCM(aes)
+
+	var aead cipher.AEAD
+
+	if boring.Enabled() {
+		aead, err = tls.NewGCMTLS13(aes)
+	} else {
+		aead, err = cipher.NewGCM(aes)
+	}
+
 	if err != nil {
 		panic(err)
 	}
