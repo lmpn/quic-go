@@ -13,7 +13,6 @@ import (
 var (
 	useBoring             = len(os.Getenv("USE_BORING")) != 0
 	errBoringIsNotEnabled = errors.New("boring was requested but not enabled")
-	zeroNonce             = [aeadNonceLength]byte{}
 )
 
 func newAEAD(aes cipher.Block) (cipher.AEAD, error) {
@@ -38,10 +37,10 @@ func allZeros(nonce []byte) bool {
 }
 
 func (f *xorNonceAEAD) sealZeroNonce() {
-	f.doSeal([]byte{}, zeroNonce[:], []byte{}, []byte{})
+	f.doSeal([]byte{}, []byte{}, []byte{}, []byte{})
 }
 
-func (f *xorNonceAEAD) seal(out, nonce, plaintext, additionalData []byte) []byte {
+func (f *xorNonceAEAD) seal(nonce, out, plaintext, additionalData []byte) []byte {
 	if useBoring {
 		if boring.Enabled() {
 			if !f.hasSeenNonceZero {
@@ -60,5 +59,5 @@ func (f *xorNonceAEAD) seal(out, nonce, plaintext, additionalData []byte) []byte
 		}
 	}
 
-	return f.doSeal(out, nonce, plaintext, additionalData)
+	return f.doSeal(nonce, out, plaintext, additionalData)
 }
