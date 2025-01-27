@@ -3,28 +3,20 @@
 package handshake
 
 import (
-	"crypto/boring"
 	"crypto/cipher"
 	"crypto/tls"
-	"errors"
 	"os"
 )
 
-var (
-	useBoring             = len(os.Getenv("USE_BORING")) != 0
-	errBoringIsNotEnabled = errors.New("boring was requested but not enabled")
-)
+var goBoringDisabled bool = string.TrimSpace(os.Getenv("QUIC_GO_DISABLE_BORING")) == "1"
 
 func newAEAD(aes cipher.Block) (cipher.AEAD, error) {
-	if useBoring {
-		if boring.Enabled() {
-			return tls.NewGCMTLS13(aes)
-		} else {
-			return nil, errBoringIsNotEnabled
-		}
-	} else {
+	if goBoringDisabled {
+		// In case Go Boring is disabled then
+		// fallback to normal cryptographic procedure.
 		return cipher.NewGCM(aes)
 	}
+	return tls.NewGCMTLS13(aes)
 }
 
 func allZeros(nonce []byte) bool {
@@ -41,23 +33,18 @@ func (f *xorNonceAEAD) sealZeroNonce() {
 }
 
 func (f *xorNonceAEAD) seal(nonce, out, plaintext, additionalData []byte) []byte {
-	if useBoring {
-		if boring.Enabled() {
-			if !f.hasSeenNonceZero {
-				// BoringSSL expects that the first nonce passed to the
-				// AEAD instance is zero.
-				// At this point the nonce argument is either zero or
-				// an artificial one will be passed to the AEAD through
-				// [sealZeroNonce]
-				f.hasSeenNonceZero = true
-				if !allZeros(nonce) {
-					f.sealZeroNonce()
-				}
+	if !goBoringDisabled {
+		if !f.hasSeenNonceZero {
+			// BoringSSL expects that the first nonce passed to the
+			// AEAD instance is zero.
+			// At this point the nonce argument is either zero or
+			// an artificial one will be passed to the AEAD through
+			// [sealZeroNonce]
+			f.hasSeenNonceZero = true
+			if !allZeros(nonce) {
+				f.sealZeroNonce()
 			}
-		} else {
-			panic(errBoringIsNotEnabled)
 		}
 	}
-
 	return f.doSeal(nonce, out, plaintext, additionalData)
 }
