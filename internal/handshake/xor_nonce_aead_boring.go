@@ -6,9 +6,10 @@ import (
 	"crypto/cipher"
 	"crypto/tls"
 	"os"
+	"strings"
 )
 
-var goBoringDisabled bool = string.TrimSpace(os.Getenv("QUIC_GO_DISABLE_BORING")) == "1"
+var goBoringDisabled bool = strings.TrimSpace(os.Getenv("QUIC_GO_DISABLE_BORING")) == "1"
 
 func newAEAD(aes cipher.Block) (cipher.AEAD, error) {
 	if goBoringDisabled {
